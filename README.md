@@ -58,6 +58,7 @@ A public-facing ecommerce storefront for clients who want a web presence. Pulls 
 ## 3. Target markets
 
 **Peru**
+
 - Primary market for v1
 - Payment providers: Mercado Pago (QR + payment links), YAPE (manual confirmation for now)
 - Currency: PEN (Peruvian Sol)
@@ -66,6 +67,7 @@ A public-facing ecommerce storefront for clients who want a web presence. Pulls 
 - Strong demand from food businesses, clothing retail, healthcare professionals
 
 **United States**
+
 - Secondary market for v1
 - Payment provider: Stripe
 - Currency: USD
@@ -77,11 +79,13 @@ A public-facing ecommerce storefront for clients who want a web presence. Pulls 
 ## 4. Business types supported
 
 ### Booking agent
+
 For businesses that operate on appointments and schedules.
 
 **Target clients:** dentists, doctors, chiropractors, psychologists, nail technicians, hair stylists, massage therapists, personal trainers, tutors.
 
 **What the agent does:**
+
 - Checks availability across one or multiple professionals' Google Calendars
 - Collects patient or client details
 - Books appointment and creates calendar event
@@ -91,11 +95,13 @@ For businesses that operate on appointments and schedules.
 - Outside business hours: still accepts bookings, schedules next available slot
 
 ### Order agent
+
 For businesses that receive and fulfill product orders.
 
 **Target clients:** food businesses, bakeries, cake shops, clothing retail, home goods, any product-based business that currently takes orders via WhatsApp manually.
 
 **What the agent does:**
+
 - Presents products from the catalog
 - Handles size, color, variant, and stock queries
 - Collects delivery or pickup preference
@@ -105,11 +111,13 @@ For businesses that receive and fulfill product orders.
 - Outside business hours: informs customer and reopening time
 
 ### Sales agent
+
 For retail businesses with a catalog that customers browse before purchasing.
 
 **Target clients:** clothing stores, accessory shops, boutiques, any retail business with an Instagram-first presence.
 
 **What the agent does:**
+
 - Handles browsing intent — customer describes what they want
 - Presents matching products with images
 - Checks stock by size, color, or variant in real time
@@ -219,11 +227,11 @@ Customer messages outside configured hours
 
 All three channels are delivered through the **Meta Business Platform (Graph API)**. One webhook endpoint in Rails receives messages from all channels. The payload identifies the source channel and the receiving page or number, which maps to a tenant.
 
-| Channel | API | Message types supported | Notes |
-|---|---|---|---|
-| WhatsApp | WhatsApp Business Cloud API | Text, images, documents, buttons, payment links, template messages | Richest feature set |
-| Instagram DMs | Instagram Messaging API | Text, images, buttons, URL links | No native payment links — use URL |
-| Facebook Messenger | Messenger Platform API | Text, images, buttons, URL links | Same as Instagram |
+| Channel            | API                         | Message types supported                                            | Notes                             |
+| ------------------ | --------------------------- | ------------------------------------------------------------------ | --------------------------------- |
+| WhatsApp           | WhatsApp Business Cloud API | Text, images, documents, buttons, payment links, template messages | Richest feature set               |
+| Instagram DMs      | Instagram Messaging API     | Text, images, buttons, URL links                                   | No native payment links — use URL |
+| Facebook Messenger | Messenger Platform API      | Text, images, buttons, URL links                                   | Same as Instagram                 |
 
 **Each client connects their own existing number or page.** Citai does not provision numbers. The client's WhatsApp Business account, Instagram Business account, or Facebook Page is connected to Citai's Meta App via OAuth during onboarding.
 
@@ -262,6 +270,7 @@ No payment processing required. Agent confirms reservation and reminds customer 
 All onboarding is performed by the Citai team. Clients do not self-configure. The onboarding intake collects all information needed to configure the tenant record, generate the agent system prompt, and connect the client's channels and payment accounts.
 
 ### Section 1 — Business identity
+
 - Business name
 - Business type (dentist / doctor / chiro / salon / food / cake / clothing / retail / other)
 - Channels customers use (WhatsApp / Instagram / Messenger — all that apply)
@@ -273,6 +282,7 @@ All onboarding is performed by the Citai team. Clients do not self-configure. Th
 - Agent tone (friendly and casual / professional and formal)
 
 ### Section 2 — Business hours
+
 - Open / closed status per day of week
 - Opening and closing time per open day
 - Outside hours behavior:
@@ -280,14 +290,17 @@ All onboarding is performed by the Citai team. Clients do not self-configure. Th
   - Booking businesses: accept bookings outside hours? (recommended yes)
 
 ### Section 3 — Services or products
+
 - **Booking businesses:** full service list with name, duration, and price. Number of professionals. Which services each professional offers.
 - **Order / retail businesses:** full product list with name, description, variants (size, color, etc.), price per variant, and stock count per variant. Lead time required (e.g. cakes need 48h). Minimum order if applicable.
 
 ### Section 4 — Delivery and fulfillment
+
 - **Order businesses:** delivery, pickup, or both. Delivery zones and fee. Business address.
 - **Booking businesses:** clinic/salon location. Home visits offered? Business address.
 
 ### Section 5 — Payments
+
 - Payment methods accepted
 - Payment timing (upfront or on delivery/at appointment)
 - Mercado Pago access token (if applicable)
@@ -295,12 +308,14 @@ All onboarding is performed by the Citai team. Clients do not self-configure. Th
 - Stripe account connection (if applicable)
 
 ### Section 6 — Escalation and notifications
+
 - Owner/manager name
 - WhatsApp number for escalation notifications
 - Email for daily and weekly reports
 - Notify on every transaction, or only on problems?
 
 ### Section 7 — Google Calendar (booking businesses only)
+
 - One calendar per professional, or one shared calendar
 - Each professional authorizes Google access during onboarding (one-time OAuth)
 - Buffer time between appointments
@@ -427,26 +442,26 @@ notifications
 
 ## 11. Tech stack
 
-| Layer | Choice | Reason |
-|---|---|---|
-| Framework | Ruby on Rails 8 | Full-stack, mature ecosystem, convention over configuration, built-in everything |
-| Database | PostgreSQL | Multi-tenancy via Apartment gem, jsonb for flexible config, robust and proven |
-| Multi-tenancy | Apartment gem (schema-per-tenant) | Clean data isolation, upgrade path to separate DBs per tenant if needed |
-| Background jobs | Sidekiq + Redis | Reminder jobs, stock reservation cleanup, webhook processing, report generation |
-| Real-time | ActionCable (WebSockets) | Live conversation updates in dashboard |
-| Auth | Devise | Tenant admin auth, role-based (owner / staff / Citai superadmin) |
-| AI | Claude API (Anthropic) | Tool-calling, multi-turn conversations, multilingual, strong instruction following |
-| WhatsApp/IG/Messenger | Meta Business Platform Graph API | Official API, all three channels unified, webhooks |
-| Payments Peru | Mercado Pago API | Webhook-confirmed, QR + payment links, operates in Peru |
-| Payments US | Stripe Connect | Industry standard, per-connected-account, webhook-confirmed |
-| Calendar | Google Calendar API (OAuth2) | Per-professional calendar, free/busy queries, event creation |
-| Email | ActionMailer + Postmark (or SendGrid) | Booking confirmations, order receipts, weekly reports |
-| File storage | Hetzner Object Storage (S3-compatible) | Product images, stays within infrastructure |
-| Frontend | Hotwire (Turbo + Stimulus) | Stays in Rails, no separate JS framework for dashboard |
-| Embeddable widget | Vanilla JS | One script tag, no framework dependency for client websites |
-| Deploy | Kamal (Rails 8 default) | Docker over SSH, zero extra infra, works perfectly with Hetzner |
-| Web server | Puma + Caddy (reverse proxy) | Caddy handles SSL automatically |
-| Monitoring | Sentry (free tier) | Error tracking across all tenants |
+| Layer                 | Choice                                 | Reason                                                                             |
+| --------------------- | -------------------------------------- | ---------------------------------------------------------------------------------- |
+| Framework             | Ruby on Rails 8                        | Full-stack, mature ecosystem, convention over configuration, built-in everything   |
+| Database              | PostgreSQL                             | Multi-tenancy via Apartment gem, jsonb for flexible config, robust and proven      |
+| Multi-tenancy         | Apartment gem (schema-per-tenant)      | Clean data isolation, upgrade path to separate DBs per tenant if needed            |
+| Background jobs       | Sidekiq + Redis                        | Reminder jobs, stock reservation cleanup, webhook processing, report generation    |
+| Real-time             | ActionCable (WebSockets)               | Live conversation updates in dashboard                                             |
+| Auth                  | Devise                                 | Tenant admin auth, role-based (owner / staff / Citai superadmin)                   |
+| AI                    | Claude API (Anthropic)                 | Tool-calling, multi-turn conversations, multilingual, strong instruction following |
+| WhatsApp/IG/Messenger | Meta Business Platform Graph API       | Official API, all three channels unified, webhooks                                 |
+| Payments Peru         | Mercado Pago API                       | Webhook-confirmed, QR + payment links, operates in Peru                            |
+| Payments US           | Stripe Connect                         | Industry standard, per-connected-account, webhook-confirmed                        |
+| Calendar              | Google Calendar API (OAuth2)           | Per-professional calendar, free/busy queries, event creation                       |
+| Email                 | ActionMailer + Postmark (or SendGrid)  | Booking confirmations, order receipts, weekly reports                              |
+| File storage          | Hetzner Object Storage (S3-compatible) | Product images, stays within infrastructure                                        |
+| Frontend              | Hotwire (Turbo + Stimulus)             | Stays in Rails, no separate JS framework for dashboard                             |
+| Embeddable widget     | Vanilla JS                             | One script tag, no framework dependency for client websites                        |
+| Deploy                | Kamal (Rails 8 default)                | Docker over SSH, zero extra infra, works perfectly with Hetzner                    |
+| Web server            | Puma + Caddy (reverse proxy)           | Caddy handles SSL automatically                                                    |
+| Monitoring            | Sentry (free tier)                     | Error tracking across all tenants                                                  |
 
 ---
 
@@ -459,6 +474,7 @@ notifications
 **Upgrade path:** CX31 (4 vCPU, 8GB RAM) when approaching 100 tenants. At 200+ tenants, move Postgres to a dedicated Hetzner DB server and keep the Rails app on the VPS. Kamal supports multi-server deployments — the config change is minimal.
 
 **Services running on the VPS:**
+
 - Rails app (Puma, multiple workers)
 - Sidekiq workers
 - Redis (job queue + ActionCable pub/sub)
@@ -483,6 +499,7 @@ The Rails app exposes a single public webhook endpoint: `POST /webhooks/meta`. T
 Citai uses **schema-per-tenant** via the Apartment gem. Each tenant gets their own PostgreSQL schema. The `public` schema contains only the `tenants` table and global configuration. All tenant data (conversations, orders, bookings, products, customers, etc.) lives in the tenant's schema.
 
 **Why schema-per-tenant over row-level isolation:**
+
 - Cleaner data isolation — a query in one tenant's schema cannot accidentally return another tenant's data
 - Easier to export or migrate a single tenant's data
 - Upgrade path to a dedicated database per tenant for enterprise clients
@@ -520,13 +537,14 @@ Given the cybersecurity background of the founding developer, the following are 
 
 Citai charges clients a flat monthly subscription fee. Citai never takes a percentage of client transactions. API costs (Meta, Claude, Mercado Pago webhooks) are absorbed into the subscription margin.
 
-| Plan | Price | Includes |
-|---|---|---|
-| Starter | $97/mo | 1 channel, 1 agent type, Citai Catalog, up to 500 conversations/month, basic dashboard |
-| Growth | $197/mo | All 3 channels, 1 agent type, unlimited conversations, full dashboard + reports |
-| Pro | $397/mo | All 3 channels, 2 agent types (booking + orders), Citai Store (v2), priority support, custom domain |
+| Plan    | Price   | Includes                                                                                            |
+| ------- | ------- | --------------------------------------------------------------------------------------------------- |
+| Starter | $97/mo  | 1 channel, 1 agent type, Citai Catalog, up to 500 conversations/month, basic dashboard              |
+| Growth  | $197/mo | All 3 channels, 1 agent type, unlimited conversations, full dashboard + reports                     |
+| Pro     | $397/mo | All 3 channels, 2 agent types (booking + orders), Citai Store (v2), priority support, custom domain |
 
 **Cost structure per active client (estimated):**
+
 - Claude API: ~$5–15/mo depending on conversation volume
 - Meta API: ~$10–20/mo depending on conversation volume
 - Hetzner VPS share: ~$3–5/mo
@@ -543,6 +561,7 @@ At 20 clients on Starter: ~$1,140–1,540/mo net. At 100 clients mixed plans: ~$
 The following is in scope for v1. Everything else is explicitly deferred.
 
 **Agent:**
+
 - [ ] Booking agent (dentists, doctors, chiros, salons)
 - [ ] Order agent (food, cakes, retail)
 - [ ] Sales / browsing agent (clothing, retail with catalog)
@@ -553,24 +572,28 @@ The following is in scope for v1. Everything else is explicitly deferred.
 - [ ] Outside hours behavior (per agent type)
 
 **Channels:**
+
 - [ ] WhatsApp (Meta Business Cloud API)
 - [ ] Instagram DMs
 - [ ] Facebook Messenger
 - [ ] Unified Meta webhook handler
 
 **Payments:**
+
 - [ ] Mercado Pago (Peru) — payment link + webhook confirmation
 - [ ] Stripe (US) — payment link + webhook confirmation
 - [ ] YAPE — manual dashboard confirmation
 - [ ] Cash on delivery / pickup — no payment processing
 
 **Calendar:**
+
 - [ ] Google Calendar OAuth per professional
 - [ ] Free/busy availability queries
 - [ ] Appointment booking and event creation
 - [ ] 24h reminder via WhatsApp
 
 **Client dashboard:**
+
 - [ ] Real-time conversation view
 - [ ] Escalation handling (reply from dashboard)
 - [ ] Citai Catalog — product and service management
@@ -579,12 +602,14 @@ The following is in scope for v1. Everything else is explicitly deferred.
 - [ ] Google Calendar embed per professional
 
 **Superadmin panel:**
+
 - [ ] All tenant conversations in real time
 - [ ] Tenant onboarding and configuration
 - [ ] Agent health monitoring
 - [ ] System prompt editor per tenant
 
 **Infrastructure:**
+
 - [ ] Single Hetzner VPS
 - [ ] Kamal deploy pipeline
 - [ ] Caddy SSL
@@ -597,10 +622,12 @@ The following is in scope for v1. Everything else is explicitly deferred.
 ## 17. V1.5 and v2 roadmap
 
 **V1.5 (within 4–6 weeks of v1 launch):**
+
 - Missed call text-back via Twilio Voice — caller doesn't get answered, receives automatic WhatsApp or SMS with agent greeting
 - Stripe billing for Citai subscription management (currently manual invoicing)
 
 **V2:**
+
 - Citai Store — public ecommerce storefront pulling from Citai Catalog
 - Custom domain support for Citai Store
 - Visual flow builder — clients can modify agent flows without Citai team involvement
@@ -614,18 +641,23 @@ The following is in scope for v1. Everything else is explicitly deferred.
 ## 18. Key architectural decisions
 
 ### Why hardcoded flows for v1
+
 The agent flows (booking, order, sales) are implemented as Rails service objects with a defined sequence, not as a visual or DB-configurable flow engine. Per-tenant customization happens through the system prompt stored in the `tenants` table. This gets v1 to market faster and avoids over-engineering before real client feedback. A flow engine is planned for v2.
 
 ### Why schema-per-tenant over row-level security
+
 Data isolation is a selling point, not an implementation detail. Healthcare clients in the US care about this. It also gives a cleaner upgrade path to dedicated databases per tenant.
 
 ### Why Meta's official API over third-party WhatsApp providers
+
 Third-party providers (waha, whapi.cloud) use unofficial WhatsApp Web reverse engineering. Meta actively blocks these. They are not suitable for a production SaaS serving paying clients. The official Meta Business API is more work to set up but is stable, supported, and compliant.
 
 ### Why Citai never touches client funds
+
 Operating as a payment facilitator or merchant of record requires financial licensing in both Peru and the US. By having each client connect their own Mercado Pago or Stripe account, Citai avoids all of this. The platform facilitates payment flows but never holds money. Revenue is purely subscription-based.
 
 ### Why the catalog is shared across agent and store
+
 A single source of truth eliminates sync complexity, prevents stock inconsistencies, and means the client manages their catalog in one place. The agent always has live stock data. The web store (v2) always reflects the same inventory.
 
 ---
@@ -692,6 +724,7 @@ ngrok http 3000
 ```
 
 **Seeding a test tenant:**
+
 ```bash
 rails db:seed
 # Creates: 1 superadmin user, 1 test tenant (booking type), 1 test tenant (order type)
@@ -702,22 +735,22 @@ rails db:seed
 
 ## Project status
 
-| Milestone | Status |
-|---|---|
-| Technical specification | Complete |
-| Onboarding templates | Complete |
-| Agent flow design | Complete |
+| Milestone                    | Status      |
+| ---------------------------- | ----------- |
+| Technical specification      | Complete    |
+| Onboarding templates         | Complete    |
+| Agent flow design            | Complete    |
 | GitHub issues and milestones | In progress |
-| Rails app initialization | Not started |
-| Core data model | Not started |
-| Meta webhook integration | Not started |
-| AI agent core | Not started |
-| Google Calendar integration | Not started |
-| Payment integrations | Not started |
-| Client dashboard | Not started |
-| Superadmin panel | Not started |
-| Production deploy | Not started |
+| Rails app initialization     | Not started |
+| Core data model              | Not started |
+| Meta webhook integration     | Not started |
+| AI agent core                | Not started |
+| Google Calendar integration  | Not started |
+| Payment integrations         | Not started |
+| Client dashboard             | Not started |
+| Superadmin panel             | Not started |
+| Production deploy            | Not started |
 
 ---
 
-*Built by [your name] · Citai · 2025*
+_Built by Mongeek Technologies · Citai · 2025_
